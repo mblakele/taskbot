@@ -1,0 +1,3 @@
+[submodule "xray"]
+	path = xray
+	url = git://github.com/robwhitby/xray.git
