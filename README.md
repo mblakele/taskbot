@@ -19,7 +19,7 @@ providing as much data-driven parallelism
 as the configuration and the workload allow.
 
 If the anonymous function updates the database, your work is done.
-If your function returns results, supply $tb:OPTIONS-SYNC
+If your function returns results, supply `$tb:OPTIONS-SYNC`
 and reduce the results however you like.
 
 ## Requirements
@@ -48,7 +48,7 @@ but it's easy with tasks of 500 documents each.
 
 This example is loosely based on the
 [2insert.xqm](https://github.com/mblakele/taskbot/blob/master/test/2insert.xqm)
-test case. We ask taskbot to insert 100,000 documents
+test case. We ask taskbot to insert 1,000,000 documents
 in segments of 500 each. This can be much faster than a single transaction.
 
     (: This inserts 1M simple test documents.
