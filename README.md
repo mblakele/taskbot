@@ -9,6 +9,19 @@ can handle, with as much concurrency as you need.
 
 Get the job done.
 
+Taskbot is basically a map-reduce utility.
+Start with an anonymous function, and a list of stuff:
+document URIs, or anything else. Taskbot spawns a task
+for each segment of the list, using a size you specify.
+You provide an anonymous function that processes each segment.
+The Task Manager queue and thread pool manage the work,
+providing as much data-driven parallelism
+as the configuration and the workload allow.
+
+If the anonymous function updates the database, your work is done.
+If your function returns results, supply $tb:OPTIONS-SYNC
+and reduce the results however you like.
+
 ## Requirements
 
 Taskbot relies heavily on `xdmp:spawn-function`, `xdmp:invoke-function`,
@@ -25,7 +38,13 @@ some code to fetch and insert each URL into a database.
 This is similar to CoRB, but without any need for Java
 and less specific to updates.
 
+
+All that might sound a little too abstract, so here are some examples.
+
 ### Creating 1M documents
+
+Inserting 1M documents in a single transaction can be painful,
+but it's easy with tasks of 500 documents each.
 
 This example is loosely based on the
 [2insert.xqm](https://github.com/mblakele/taskbot/blob/master/test/2insert.xqm)
@@ -36,10 +55,14 @@ in segments of 500 each. This can be much faster than a single transaction.
      : Extend as needed.
      :)
     tb:list-segment-process(
+      (: Total size of the job. :)
       1 to 1000 * 1000,
+      (: Size of each segment of work. :)
       500,
       "test/asset",
+      (: This anonymous function will be called for each segment. :)
       function($list as item()+, $opts as map:map?) {
+        (: Any chainsaw should have a safety. Check it here. :)
         tb:maybe-fatal(),
         for $i in $list
         return xdmp:document-insert(
@@ -50,9 +73,11 @@ in segments of 500 each. This can be much faster than a single transaction.
             element asset-person { 1 + xdmp:random(999) },
             (1 to xdmp:random(9))
             ! element asset-ref { xdmp:random(1000) } }),
+        (: This is an update, so be sure to commit each segment. :)
         xdmp:commit() },
       (: options - not used in this example. :)
       map:new(map:entry('testing', '123...'),
+      (: This is an update, so be sure to say so. :)
       $tb:OPTIONS-UPDATE)
 
 Important points:
@@ -160,7 +185,12 @@ Remember to call `tb:fatal-set(false())` before you try again.
 You can protect your own code by calling `tb:maybe-fatal()`,
 as in the examples above.
 
-Disappearing updates? Did you remember to call `xdmp:commit()`?
+Disappearing updates? Did you remember to call `xdmp:commit()`
+in your anonymous function?
+
+Not seeing enough parallelism?
+Is the input list large enough to drive enough tasks?
+Do you have enough Task Manager threads configured for your CPU core count?
 
 ## License Information
 
