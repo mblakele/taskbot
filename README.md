@@ -59,9 +59,9 @@ Important points:
 
 * The segment size is 500, which is a good place to start.
 * Do not change the function signature.
-** The first parameter is the list of (at most) 500 items to process. In this example, each item will be a number from 1 to 1M.
-** The second parameter is a map, which can contain anything you like. In this example it's just a placeholder with `testing: 123...`.
-* If your function includes **updates***, remember to call `xdmp:commit` at the end.
+    * The first parameter is the list of (at most) 500 items to process. In this example, each item will be a number from 1 to 1M.
+    * The second parameter is a map, which can contain anything you like. In this example it's just a placeholder with `testing: 123...`.
+* If your function includes **updates**, remember to call `xdmp:commit` at the end.
 
 ### Calculate and persist document relationships
 
