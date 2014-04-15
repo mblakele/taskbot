@@ -173,10 +173,228 @@ then reduce the results.
     let $ref-count := sum($results ! json:array-values(.)[2])
     return ($ref-count div $item-count)))
 
+## API
+
+### Module Variables
+
+For your convenience, taskbot exposes some module variables.
+
+#### Options elements in the `xdmp:eval` namespace
+
+* `OPTIONS-PRIORITY`: set <priority>higher</priority>
+* `OPTIONS-SAFE`: set `<isolation>different-transaction</isolation>`
+  and `<prevent-deadlocks>true</prevent-deadlocks>`. This is useful
+  to avoid accidentally starting an update from an update.
+* `OPTIONS-SYNC`: set `<result>true</result>`
+  and `<priority>higher</priority>`. This is useful when your task
+  will return results.
+* `OPTIONS-UPDATE`: set `<transaction-mode>update</transaction-mode>`.
+  Use this for any update function, because `xdmp:spawn-function`
+  defaults to timestamped mode. Also be sure to call `xdmp:commit`
+  at the end of your function.
+
+### Functions
+
+### list-segment-process
+
+```
+tb:list-segment-process(
+  $list-all as item()*,
+  $size as xs:integer,
+  $label as xs:string,
+  $fn as function(item()+, map:map?) as item()*,
+  [$fn-options as map:map?],
+  [$eval-options as element(eval:options)?],
+  [$mode as xs:string],
+  [$policy as xs:string?],
+  [$sleep as xs:unsignedInt?])
+as item()*
+```
+
+Apply a function `$fn` across a list of items `$list`,
+in segments of `$size` each. The `$label` is an arbitrary string
+used for logging.
+
+The function `$fn` must have the correct signature
+`function(item()+, map:map?) as item()*`.
+This will be called multiple times, each time processing
+a segment of `$size` sequential items from `$list`.
+Any map is supplied as `$fn-options`,
+it will be passed to `$fn` for each segment.
+
+The `$mode` may be `spawn` (default) or `invoke`,
+and governs whether each segment is processed using
+`xdmp:spawn-function` or `xdmp:invoke-function`.
+If `$eval-options` are supplied, they will be passed to the
+`xdmp:spawn-function` or `xdmp:invoke-function` call for each segment.
+
+If `$mode` is `spawn` (default), and the call to `xdmp:spawn-function`
+throws `XDMP-MAXTASKS`, then the `$policy` will govern behavior.
+Policies include:
+
+* `abort`: re-throw the `XDMP-MAXTASKS` error, aborting the work.
+* `caller-blocks`: the caller will sleep and try again, using
+  incremental back off and retry. The first sleep is 1-ms,
+  doubling to a maximum of 1000-ms.
+* `caller-runs` (default): the caller will invoke the function immediately.
+* `discard`: the segment will be discarded.
+
+If `$sleep` is supplied, taskbot will sleep `$sleep` milliseconds
+between segments. This can be useful when the work is low-priority
+and might impact production queries unless throttled.
+
+### forests-uris-process
+
+```
+tb:forests-uris-process(
+  $forests as xs:unsignedLong+,
+  $uris-options as xs:string*,
+  $query as cts:query?,
+  $size as xs:integer,
+  $label as xs:string,
+  $fn as function(item()+, map:map?) as item()*,
+  [$fn-options as map:map?],
+  [$eval-options as element(eval:options)?])
+as item()*
+```
+
+This function uses `cts:uris` to list URIs from specific forest(s),
+optionally matching `$query` and `$uris-options`.
+See [cts:uris](https://docs.marklogic.com/cts:uris) for details
+of these options.
+The URIs and remaining options are passed to `tb:list-segment-process`
+for segmentation and processing.
+
+### fatal-set
+
+```
+tb:fatal-set($value as xs:boolean)
+as empty-sequence()
+```
+
+This function sets the server variable checked by `tb:maybe-fatal`.
+Set `true` to stop existing work as quickly as possible,
+without restarting MarkLogic.
+
+### maybe-fatal
+
+```
+tb:maybe-fatal()
+as empty-sequence()
+```
+
+This function checks a server field to see if the current operation
+has been canceled. If so it will throw `TASKBOT-FATAL`.
+
+#### log
+
+```
+tb:log(
+  $label as xs:string,
+  $list as xs:anyAtomicType*,
+  $level as xs:string)
+as empty-sequence()
+```
+
+Use this function to log messages at an arbitrary level.
+The `$label` will automatically gain a `taskbot:` prefix.
+The levels are the ones used by [xdmp:log](https://docs.marklogic.com/xdmp:log).
+
+#### fine
+
+```
+tb:fine(
+  $label as xs:string,
+  $list as xs:anyAtomicType*)
+as empty-sequence()
+```
+
+Log a message at `level=fine`.
+The `$label` will automatically gain a `taskbot:` prefix.
+
+#### debug
+
+```
+tb:debug(
+  $label as xs:string,
+  $list as xs:anyAtomicType*)
+as empty-sequence()
+```
+
+Log a message at `level=debug`.
+The `$label` will automatically gain a `taskbot:` prefix.
+
+#### info
+
+```
+tb:info(
+  $label as xs:string,
+  $list as xs:anyAtomicType*)
+as empty-sequence()
+```
+
+Log a message at `level=info`.
+The `$label` will automatically gain a `taskbot:` prefix.
+
+#### warning
+
+```
+tb:warning(
+  $label as xs:string,
+  $list as xs:anyAtomicType*)
+as empty-sequence()
+```
+
+Log a message at `level=warning`.
+The `$label` will automatically gain a `taskbot:` prefix.
+
+### error
+
+```
+tb:error(
+  $code as xs:string,
+  $items as item()*)
+as empty-sequence()
+```
+
+Throw an error using [fn:error](https://docs.marklogic.com/fn:error).
+The `$code` will automatically gain a `TASKBOT-` prefix.
+
+### assert-timestamp
+
+```
+tb:assert-timestamp()
+as empty-sequence()
+```
+
+Call to ensure that the current evaluation context is read-only,
+aka timestamped. If called in an update, it will throw an error
+`TASKBOT-NOTIMESTAMP`.
+
+### options-forest
+
+```
+tb:options-forest($forest as xs:unsignedLong)
+as element(eval:options)
+```
+
+Returns an eval options element that can be used to restrict
+an operation to a single forest.
+
+### options-forest-update
+
+```
+tb:options-forest-update($forest as xs:unsignedLong)
+as element(eval:options)
+```
+
+Returns an eval options element that can be used to restrict
+an update operation to a single forest.
+
 ## Troubleshooting
 
-Look for messages in ErrorLog.txt, especially after turning up
-the `file-log-level` to debug or fine. Write your own messages
+Look for messages in `ErrorLog.txt`, especially after setting
+`file-log-level` to debug or fine. Write your own messages
 using `xdmp:log` or the taskbot log functions.
 
 If you have a bunch of out of control tasks queued,
@@ -191,6 +409,7 @@ in your anonymous function?
 Not seeing enough parallelism?
 Is the input list large enough to drive enough tasks?
 Do you have enough Task Manager threads configured for your CPU core count?
+Experiment with 1-4 threads per CPU core.
 
 ## License Information
 
@@ -200,7 +419,8 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+[http://www.apache.org/licenses/LICENSE-2.0]
+(http://www.apache.org/licenses/LICENSE-2.0)
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,

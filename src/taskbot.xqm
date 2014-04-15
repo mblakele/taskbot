@@ -60,7 +60,9 @@ declare variable $OPTIONS-UPDATE := (
 
 declare variable $SERVER := xdmp:server-name(xdmp:server()) ;
 
-(: When no transform function is supplied, use an identity function. :)
+(: When no transform function is supplied, use an identity function.
+ : This is not used yet.
+ :)
 declare variable $TRANSFORM-DEFAULT := function(
   $content as node(),
   $uri as xs:string) as node() { $content } ;
@@ -149,7 +151,7 @@ as empty-sequence()
 
 declare function m:options-forest(
   $forest as xs:unsignedLong)
-as element()
+as element(eval:options)
 {
   <options xmlns="xdmp:eval">
     <database>{ $forest }</database>
@@ -158,7 +160,7 @@ as element()
 
 declare function m:options-update-forest(
   $forest as xs:unsignedLong)
-as element()
+as element(eval:options)
 {
   <options xmlns="xdmp:eval">
     <transaction-mode>update</transaction-mode>
