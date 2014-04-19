@@ -52,6 +52,14 @@ declare variable $OPTIONS-SYNC := (
   </options>
 );
 
+declare variable $OPTIONS-SYNC-UPDATE := (
+  <options xmlns="xdmp:eval">
+    <result>true</result>
+    <priority>higher</priority>
+    <transaction-mode>update</transaction-mode>
+  </options>
+);
+
 declare variable $OPTIONS-UPDATE := (
   <options xmlns="xdmp:eval">
     <transaction-mode>update</transaction-mode>

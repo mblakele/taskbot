@@ -188,6 +188,10 @@ For your convenience, taskbot exposes some module variables.
 * `OPTIONS-SYNC`: set `<result>true</result>`
   and `<priority>higher</priority>`. This is useful when your task
   will return results.
+* `OPTIONS-SYNC-UPDATE`: set `<result>true</result>`
+  and `<priority>higher</priority>`
+  and `<transaction-mode>update</transaction-mode>`.
+  This is useful when your task will update and return results.
 * `OPTIONS-UPDATE`: set `<transaction-mode>update</transaction-mode>`.
   Use this for any update function, because `xdmp:spawn-function`
   defaults to timestamped mode. Also be sure to call `xdmp:commit`
