@@ -134,10 +134,8 @@ declare %t:setup function ref-enrich-persons()
     $tb:OPTIONS-UPDATE)
 };
 
-(: Hack - and kind of fragile too. :)
 declare %t:setup function ref-wait()
 {
-  xdmp:sleep(2500),
   tb:tasks-wait()
 };
 

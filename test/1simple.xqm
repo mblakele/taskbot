@@ -36,4 +36,18 @@ declare %t:case function fatal-is-not-set()
   at:empty(tb:maybe-fatal())
 };
 
+declare %t:case function tasks-do-spawn()
+{
+  xdmp:spawn-function(
+    function() { xdmp:sleep(1000) }),
+  at:true(
+    tb:tasks-count() gt 0)
+};
+
+declare %t:case function queue-size()
+{
+  at:true(
+    tb:queue-size() castable as xs:integer)
+};
+
 (: 1simple.xqm :)

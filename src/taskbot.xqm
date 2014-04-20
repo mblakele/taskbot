@@ -30,7 +30,7 @@ declare variable $M := namespace-uri(<m:x/>) ;
 declare variable $MAX-LIMIT := 500 ;
 
 (: Limit backoff and retry. :)
-declare variable $MAX-SLEEP := 1000 ;
+declare variable $MAX-SLEEP := 16 * 1000 ;
 
 declare variable $OPTIONS-PRIORITY := (
   <options xmlns="xdmp:eval">
@@ -470,12 +470,19 @@ as xs:string*
     $host-forests ! index-of($database-forests, .))
 };
 
+declare function m:queue-size()
+as xs:integer
+{
+  xdmp:server-status(xdmp:hosts(), xdmp:server('TaskServer'))
+  /mlss:queue-size
+};
+
 declare function m:tasks-count()
 as xs:integer
 {
   count(
     xdmp:server-status(xdmp:hosts(), xdmp:server('TaskServer'))
-    /mlss:server-status/mlss:request-statuses/mlss:request-status)
+    /mlss:request-statuses/mlss:request-status)
 };
 
 declare function m:fn-wait(
@@ -484,7 +491,7 @@ declare function m:fn-wait(
   $sleep as xs:integer)
 as empty-sequence()
 {
-  m:debug('fn-wait', ($label, $sleep)),
+  m:fine('fn-wait', ($label, $sleep)),
   if ($fn()) then () else (
     (: Back off and retry, with a cap. :)
     xdmp:sleep($sleep),

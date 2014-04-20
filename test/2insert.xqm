@@ -80,10 +80,8 @@ declare %t:setup function insert-persons()
     $tb:OPTIONS-UPDATE)
 };
 
-(: Hack - and kind of fragile too. :)
 declare %t:setup function insert-wait()
 {
-  xdmp:sleep(1500),
   tb:tasks-wait()
 };
 
