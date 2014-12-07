@@ -14,10 +14,11 @@ declare namespace http="xdmp:http" ;
 
 declare namespace mlss="http://marklogic.com/xdmp/status/server" ;
 
-declare variable $ERRORS-URI := $M||'/errors/' ;
+declare variable $ERRORS-URI as xs:string := $M||'/errors/' ;
 
-declare variable $FATAL-NAME := $M||'/.FATAL' ;
-declare variable $FATAL := xdmp:get-server-field($FATAL-NAME) ;
+declare variable $FATAL-NAME as xs:string := $M||'/.FATAL' ;
+declare variable $FATAL as xs:boolean := xdmp:get-server-field(
+  $FATAL-NAME, false()) ;
 
 (: SUPPORT-13787 7.0-2.1 xdmp:spawn-function shows parent server.
  : So do not use xdmp:spawn-function.
@@ -32,27 +33,27 @@ declare variable $MAX-LIMIT := 500 ;
 (: Limit backoff and retry. :)
 declare variable $MAX-SLEEP := 16 * 1000 ;
 
-declare variable $OPTIONS-PRIORITY := (
+declare variable $OPTIONS-PRIORITY as element(eval:options) := (
   <options xmlns="xdmp:eval">
     <priority>higher</priority>
   </options>
 );
 
-declare variable $OPTIONS-SAFE := (
+declare variable $OPTIONS-SAFE as element(eval:options) := (
   <options xmlns="xdmp:eval">
     <isolation>different-transaction</isolation>
     <prevent-deadlocks>true</prevent-deadlocks>
   </options>
 );
 
-declare variable $OPTIONS-SYNC := (
+declare variable $OPTIONS-SYNC as element(eval:options) := (
   <options xmlns="xdmp:eval">
     <result>true</result>
     <priority>higher</priority>
   </options>
 );
 
-declare variable $OPTIONS-SYNC-UPDATE := (
+declare variable $OPTIONS-SYNC-UPDATE as element(eval:options) := (
   <options xmlns="xdmp:eval">
     <result>true</result>
     <priority>higher</priority>
@@ -60,20 +61,13 @@ declare variable $OPTIONS-SYNC-UPDATE := (
   </options>
 );
 
-declare variable $OPTIONS-UPDATE := (
+declare variable $OPTIONS-UPDATE as element(eval:options) := (
   <options xmlns="xdmp:eval">
     <transaction-mode>update</transaction-mode>
   </options>
 );
 
-declare variable $SERVER := xdmp:server-name(xdmp:server()) ;
-
-(: When no transform function is supplied, use an identity function.
- : This is not used yet.
- :)
-declare variable $TRANSFORM-DEFAULT := function(
-  $content as node(),
-  $uri as xs:string) as node() { $content } ;
+declare variable $SERVER as xs:string := xdmp:server-name(xdmp:server()) ;
 
 declare function m:log(
   $label as xs:string,
@@ -192,7 +186,7 @@ as item()*
   try {
     xdmp:spawn-function($fn, $eval-options) }
   catch($ex) {
-    if ($ex/error:code ne 'XDMP-MAXTASKS') then xdmp:rethrow()
+    if (not($ex/error:code = 'XDMP-MAXTASKS')) then xdmp:rethrow()
     else switch($policy)
     case 'abort' return xdmp:rethrow()
     case 'caller-blocks' return (
@@ -417,6 +411,31 @@ as item()*
   m:forests-uris-process(
     $forests, $uris-options, $query,
     $size, $label,
+    $fn, ())
+};
+
+declare function m:forests-uris-process(
+  $forests as xs:unsignedLong+,
+  $label as xs:string,
+  $fn as function(item()+, map:map?) as item()*,
+  $fn-options as map:map?)
+as item()*
+{
+  m:forests-uris-process(
+    $forests, (), (),
+    $MAX-LIMIT, $label,
+    $fn, $fn-options)
+};
+
+declare function m:forests-uris-process(
+  $forests as xs:unsignedLong+,
+  $label as xs:string,
+  $fn as function(item()+, map:map?) as item()*)
+as item()*
+{
+  m:forests-uris-process(
+    $forests, (), (),
+    $MAX-LIMIT, $label,
     $fn, ())
 };
 
