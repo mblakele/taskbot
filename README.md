@@ -43,7 +43,7 @@ All that might sound a little too abstract, so here are some examples.
 
 ### Creating 1M documents
 
-Inserting 1M documents in a single transaction can be painful,
+Inserting one million documents in a single transaction can be painful,
 but it's easy with tasks of 500 documents each.
 
 This example is loosely based on the
@@ -76,7 +76,7 @@ in segments of 500 each. This can be much faster than a single transaction.
         (: This is an update, so be sure to commit each segment. :)
         xdmp:commit() },
       (: options - not used in this example. :)
-      map:new(map:entry('testing', '123...'),
+      map:new(map:entry('testing', '123...')),
       (: This is an update, so be sure to say so. :)
       $tb:OPTIONS-UPDATE)
 
